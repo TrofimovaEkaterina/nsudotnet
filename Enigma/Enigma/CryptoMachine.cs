@@ -6,62 +6,60 @@ namespace Enigma
 {
     class CryptoMachine
     {
-        SymmetricAlgorithm algorithm;
-        public CryptoMachine(SymmetricAlgorithm alg)      //На вход получает алгоритм шифрования
+        SymmetricAlgorithm Alg;
+        public CryptoMachine(SymmetricAlgorithm alg)
         {
-            algorithm = alg;
+            Alg = alg;
         }
 
-        private String getFileName(string path)
+        public void Encode(String fileToEncrypt, String fileToWrite)
         {
-            int idx = path.LastIndexOf('.');
-            if (idx < 0)
+            Alg.GenerateKey();
+            Alg.GenerateIV();
+            File.WriteAllLines(String.Format("{0}.key.txt", Path.GetFileNameWithoutExtension(fileToEncrypt)),
+                new string[] { Convert.ToBase64String(Alg.Key), Convert.ToBase64String(Alg.IV) });
+
+            using (FileStream fsIn = new FileStream(fileToEncrypt, FileMode.Open))
             {
-                return path;
+                using (FileStream fsCrypt = new FileStream(fileToWrite, FileMode.Create))
+                {
+                    using (CryptoStream cs = new CryptoStream(fsIn, Alg.CreateEncryptor(), CryptoStreamMode.Read))
+                    {
+                        cs.CopyTo(fsCrypt);
+                    }
+                }
             }
-            return path.Substring(0, idx);
         }
 
-
-        public void Encode(String input, String output)            {
-            algorithm.GenerateKey();
-            algorithm.GenerateIV();
-            File.WriteAllLines(String.Format("{0}.key.txt", getFileName(input)),
-                new string[] { Convert.ToBase64String(algorithm.Key), Convert.ToBase64String(algorithm.IV) });
-
-            new CryptoStream(new FileStream(input, FileMode.Open),
-                algorithm.CreateEncryptor(),
-                CryptoStreamMode.Read)
-                .CopyTo(new FileStream(output, FileMode.Create));
-
-        }
-
-        public void Decode(String input, String output, String keyFile)  
+        public void Decode(String fileToDecrypt, String fileToWrite, String keyFile)
         {
 
             String keyStr, ivStr;
-            StreamReader inStream = new StreamReader(keyFile);      //Открытие потока на чтение
+            StreamReader inStream = new StreamReader(keyFile);
 
             keyStr = inStream.ReadLine();
             ivStr = inStream.ReadLine();
 
-            if (keyStr == null || ivStr == null)                    //Простенькая проверка на целостность
+            if (keyStr == null || ivStr == null)
             {
-                Console.WriteLine("key file corrupted");
-                Environment.Exit(0);
+                throw new Exception("Key file corrupted"); 
             }
+            
+            Alg.Key = Convert.FromBase64String(keyStr);
+            Alg.IV = Convert.FromBase64String(ivStr);
 
-            keyStr.Replace(Environment.NewLine, "");
-            ivStr.Replace(Environment.NewLine, "");
-            algorithm.Key = Convert.FromBase64String(keyStr);
-            algorithm.IV = Convert.FromBase64String(ivStr);
-
-            new CryptoStream(new FileStream(input, FileMode.Open),
-                algorithm.CreateDecryptor(),
-                CryptoStreamMode.Read)
-                .CopyTo(new FileStream(output, FileMode.Create));
+            using (FileStream fsCrypted = new FileStream(fileToDecrypt, FileMode.Open))
+            {
+                using (FileStream fsOut = new FileStream(fileToWrite, FileMode.Create))
+                {
+                    using (CryptoStream cs = new CryptoStream(fsCrypted, Alg.CreateDecryptor(), CryptoStreamMode.Read))
+                    {
+                        cs.CopyTo(fsOut);
+                    }
+                }
+            }
         }
 
-
     }
+
 }

@@ -7,16 +7,17 @@ namespace NumberGuesser
     {
         static void Main(string[] args)
         {
-            String userName;                                        //Имя пользователя
-            LinkedList<int> userAnswers = new LinkedList<int>();    //Его ответы
+            String userName;
+            int[] userAnswers = new int[1000];
+            int userAnswersCount = 0;
 
-            int counter = 0;                                        
-            int curAnswer;                                          
+            int counter = 0;
+            int curAnswer;
 
             Random randomizer = new Random();                       //Генератор числа и "унижающих человеческое достоинство" ответов
             int number = randomizer.Next() % 101;                   //Искомое число
-            
-            Console.WriteLine("What's your name, stranger?");       
+
+            Console.WriteLine("What's your name, stranger?");
             userName = Console.ReadLine();
 
             String[] systemAnswers = new String[] { "\nOne more pathetic attempt, " + userName + ", one more...\n",
@@ -25,8 +26,8 @@ namespace NumberGuesser
                 "\nAnd you still have not guessed, " + userName + ". Why am I not surprised?\n",
                 "\nMaybe you should play another game? You know, more simple one.\n",
                 "\nGosh... " + userName + ", are you really that stupid or just pretending?\n",
-                "\nShame on you, " +  userName + "! And on me 'cause I still write back to you...\n"};    
-            
+                "\nShame on you, " +  userName + "! And on me 'cause I still write back to you...\n"};
+
             DateTime startTime = DateTime.Now;                       //Запуск таймера
 
             Console.WriteLine("So, " + userName + ", try to guess a number. Try to the bitter end or go away in shame (press 'q')");
@@ -37,24 +38,25 @@ namespace NumberGuesser
 
                 //Попытка распарсить в int                
                 if (int.TryParse(str, out curAnswer))
-                {                  
-                    userAnswers.AddLast(curAnswer);
+                {
+                    userAnswers[userAnswersCount] = curAnswer;
+                    userAnswersCount++;
 
                     //Если пользователь угадал число
-                    if (curAnswer == number)                            
-                    {                                              
-                        Console.WriteLine(String.Format("\nMy congratulations, " + userName + "! You win in {0} minut(es) after {1} attempt(s)",       
-                            (DateTime.Now - startTime).Minutes, userAnswers.Count));
+                    if (curAnswer == number)
+                    {
+                        Console.WriteLine(String.Format("\nMy congratulations, " + userName + "! You win in {0} minut(es) after {1} attempt(s)",
+                            (DateTime.Now - startTime).Minutes, userAnswersCount));
                         //Вывод всех попыток и знаков сравнения
                         Console.WriteLine("Game log:");
-                        foreach (int answer in userAnswers)                                  
+                        for (int i = 0; i < userAnswersCount; i++)
                         {
-                            Console.WriteLine(answer + ((answer > number) ? (" >") : ((answer < number) ? (" <") : (" ="))));  
+                            Console.WriteLine(userAnswers[i] + ((userAnswers[i] > number) ? (" >") : ((userAnswers[i] < number) ? (" <") : (" ="))));
                         }
-                        break;                         
+                        break;
                     }
 
-                    if (curAnswer > number)                
+                    if (curAnswer > number)
                     {
                         Console.WriteLine("less");
                     }
@@ -63,17 +65,24 @@ namespace NumberGuesser
                         Console.WriteLine("more");
                     }
 
-                    counter = (counter + 1) % 4;    
-                    if (counter == 0)               
+                    counter = (counter + 1) % 4;
+                    if (counter == 0)
                     {
                         Console.WriteLine(systemAnswers[randomizer.Next() % systemAnswers.Length]);
+                    }
+
+                    if (userAnswersCount >= 1000)
+                    {
+                        Console.WriteLine("\nToo many attempts, " + userName + ", too many... GoodBye");
+                        Console.ReadKey();
+                        Environment.Exit(0);
                     }
                 }
                 //Если пользователь ввел не число
                 else
                 {
                     //Пользователь решил позорно смыться
-                    if (str == "q")     
+                    if (str == "q")
                     {
                         Console.WriteLine("I didn't think that it's so easy to beat you, " + userName + "...");
                         break;
@@ -81,11 +90,11 @@ namespace NumberGuesser
                     //Если пользователь ввел что-то помимо числа и команды на выход
                     else
                     {
-                        Console.WriteLine("Khm, " + userName + ", I really have to remind you that I only understand numbers and command 'q'?");   
+                        Console.WriteLine("Khm, " + userName + ", I really have to remind you that I only understand numbers and command 'q'?");
                     }
                 }
             }
-            Console.ReadKey();     
+            Console.ReadKey();
         }
     }
 }
