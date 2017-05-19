@@ -35,10 +35,12 @@ namespace Enigma
         {
 
             String keyStr, ivStr;
-            StreamReader inStream = new StreamReader(keyFile);
-
-            keyStr = inStream.ReadLine();
-            ivStr = inStream.ReadLine();
+            
+            using (StreamReader fsIn = new StreamReader(keyFile))
+            {
+                keyStr = fsIn.ReadLine();
+                ivStr = fsIn.ReadLine();
+            }
 
             if (keyStr == null || ivStr == null)
             {
