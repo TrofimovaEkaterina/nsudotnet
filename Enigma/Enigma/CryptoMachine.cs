@@ -84,7 +84,8 @@ namespace Enigma
 
             if (disposing)
             {
-                alg.Dispose();
+                if(alg!=null)
+                    alg.Dispose();
             }
             
             disposed = true;
