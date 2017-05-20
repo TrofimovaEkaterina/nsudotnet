@@ -1,31 +1,36 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Security.Cryptography;
 
 namespace Enigma
 {
-    class CryptoMachine
+    class CryptoMachine:IDisposable
     {
-        SymmetricAlgorithm Alg;
+        private bool disposed = false;
+        private SymmetricAlgorithm alg;
+        
         public CryptoMachine(SymmetricAlgorithm alg)
         {
-            Alg = alg;
+            this.alg = alg;
         }
 
         public void Encode(String fileToEncrypt, String fileToWrite)
         {
-            Alg.GenerateKey();
-            Alg.GenerateIV();
+            alg.GenerateKey();
+            alg.GenerateIV();
             File.WriteAllLines(String.Format("{0}.key.txt", Path.GetFileNameWithoutExtension(fileToEncrypt)),
-                new string[] { Convert.ToBase64String(Alg.Key), Convert.ToBase64String(Alg.IV) });
+                new string[] { Convert.ToBase64String(alg.Key), Convert.ToBase64String(alg.IV) });
 
             using (FileStream fsIn = new FileStream(fileToEncrypt, FileMode.Open))
             {
                 using (FileStream fsCrypt = new FileStream(fileToWrite, FileMode.Create))
                 {
-                    using (CryptoStream cs = new CryptoStream(fsIn, Alg.CreateEncryptor(), CryptoStreamMode.Read))
+                    using (ICryptoTransform encryptor = alg.CreateEncryptor())
                     {
-                        cs.CopyTo(fsCrypt);
+                        using (CryptoStream cs = new CryptoStream(fsIn, encryptor, CryptoStreamMode.Read))
+                        {
+                            cs.CopyTo(fsCrypt);
+                        }
                     }
                 }
             }
@@ -35,7 +40,7 @@ namespace Enigma
         {
 
             String keyStr, ivStr;
-            
+
             using (StreamReader fsIn = new StreamReader(keyFile))
             {
                 keyStr = fsIn.ReadLine();
@@ -44,24 +49,46 @@ namespace Enigma
 
             if (keyStr == null || ivStr == null)
             {
-                throw new Exception("Key file corrupted"); 
+                throw new Exception("Key file corrupted");
             }
-            
-            Alg.Key = Convert.FromBase64String(keyStr);
-            Alg.IV = Convert.FromBase64String(ivStr);
+
+            alg.Key = Convert.FromBase64String(keyStr);
+            alg.IV = Convert.FromBase64String(ivStr);
 
             using (FileStream fsCrypted = new FileStream(fileToDecrypt, FileMode.Open))
             {
                 using (FileStream fsOut = new FileStream(fileToWrite, FileMode.Create))
                 {
-                    using (CryptoStream cs = new CryptoStream(fsCrypted, Alg.CreateDecryptor(), CryptoStreamMode.Read))
+                    using (ICryptoTransform decryptor = alg.CreateDecryptor())
                     {
-                        cs.CopyTo(fsOut);
+                        using (CryptoStream cs = new CryptoStream(fsCrypted, decryptor, CryptoStreamMode.Read))
+                        {
+                            cs.CopyTo(fsOut);
+                        }
                     }
                 }
             }
         }
 
-    }
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
 
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposed)
+                return;
+
+            if (disposing)
+            {
+                alg.Dispose();
+            }
+            
+            disposed = true;
+        }
+
+    }
 }
