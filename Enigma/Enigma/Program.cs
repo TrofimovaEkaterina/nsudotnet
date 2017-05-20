@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Security.Cryptography;
 
 namespace Enigma
@@ -43,26 +43,27 @@ namespace Enigma
             {
                 try                                                 
                 {
-                    var alg = getAlgByName(args[2].ToLower());      
-                    
-                    CryptoMachine cryptoMachine = new CryptoMachine(alg);
-                    
-                    switch (args[0])                                        
+                    var alg = getAlgByName(args[2].ToLower());
+
+                    using (CryptoMachine cryptoMachine = new CryptoMachine(alg))
                     {
-                        case "encrypt":
-                            cryptoMachine.Encode(args[1], args[3]);                                                                                                                        
-                            break;
-                        case "decrypt":
-                            if (args.Length < 5)
-                            {
-                                Console.WriteLine("Not enough arguments");
+                        switch (args[0])
+                        {
+                            case "encrypt":
+                                cryptoMachine.Encode(args[1], args[3]);
                                 break;
-                            }
-                            cryptoMachine.Decode(args[1], args[4], args[3]);   
-                            break;
-                        default:
-                            Console.WriteLine("Unsupported command");
-                            break;
+                            case "decrypt":
+                                if (args.Length < 5)
+                                {
+                                    Console.WriteLine("Not enough arguments");
+                                    break;
+                                }
+                                cryptoMachine.Decode(args[1], args[4], args[3]);
+                                break;
+                            default:
+                                Console.WriteLine("Unsupported command");
+                                break;
+                        }
                     }
                 }
                 catch (Exception ex)
