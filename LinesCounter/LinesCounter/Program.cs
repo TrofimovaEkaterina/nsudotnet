@@ -72,7 +72,6 @@ namespace LinesCounter
                         if (!str.Equals(String.Empty))
                         {
                             linesCount++;
-                            Console.WriteLine(str);
                         }
                     }
                 }
